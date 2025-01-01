@@ -20,7 +20,7 @@ def client():
         packet = f"{seq_num}:{chunk}"  # שילוב מספר סידורי ותוכן
 
         client_socket.send(packet.encode('utf-8'))  # שליחת המקטע
-        print(f"Sent chunk {seq_num}: {chunk}")
+        print(f"Sent chunk {seq_num}: {chunk.decode('utf-8').strip("'b")}")
 
         while True:
             ack = client_socket.recv(1024).decode('utf-8').strip()

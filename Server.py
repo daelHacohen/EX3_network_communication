@@ -64,12 +64,12 @@ def server():
             chunk = client_socket.recv(max_message_size + 10).decode('utf-8')  # מקבל מקטע
             if not chunk:
                 break
-            print(chunk)
+            # print(chunk.strip("'b"))
             seq_num, data = chunk.split(":", 1)  # חלוקה למספר סידורי ולתוכן
             seq_num = int(seq_num)
 
             if seq_num == expected_seq:  # בדיקה אם המספר הסידורי תואם
-                print(f"Received chunk {seq_num}: {data}")
+                print(f"Received chunk {seq_num}: {data.strip("'b")}")
                 client_socket.send(f"ACK:{seq_num}\n".encode('utf-8')) # שולח ack
                 all_the_message += data.strip("'b")
                 expected_seq += 1
