@@ -13,7 +13,24 @@ def client():
     print(f"Window size from server: {window_size} bytes")
 
     message_for_the_server = input("Enter message for the server: ").encode('utf-8')
+    chunks = [
+        message_for_the_server[i:i + max_msg_size]
+        for i in range(0, len(message_for_the_server), max_msg_size)
+    ]
+    num_chunks = len(chunks)
+    base = 0  # תחילת החלון
+    next_seq_num = 0  # המספר הסידורי הבא לשליחה
+    acks_received = set()  # רשימת ה-ACK שהתקבלו
 
+    while base < num_chunks:
+        # שליחת הודעות במסגרת חלון ההזזה
+        while next_seq_num < base + window_size and next_seq_num < num_chunks:
+            packet = f"{next_seq_num}:{chunks[next_seq_num].decode('utf-8')}"
+            client_socket.send(packet.encode('utf-8'))
+            print(f"Sent chunk {next_seq_num}: {chunks[next_seq_num].decode('utf-8')}")
+            next_seq_num += 1
+
+            
     for i in range(0, len(message_for_the_server), max_msg_size):
         chunk = message_for_the_server[i:i + max_msg_size]
         seq_num = i // max_msg_size  # חישוב מספר סידורי
