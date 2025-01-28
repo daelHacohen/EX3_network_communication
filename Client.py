@@ -13,37 +13,43 @@ def client():
     print(f"Window size from server: {window_size} bytes")
 
     message_for_the_server = input("Enter message for the server: ").encode('utf-8')
-    chunks = [
-        message_for_the_server[i:i + max_msg_size]
-        for i in range(0, len(message_for_the_server), max_msg_size)
-    ]
+
+    # ---------------------מחלק את ההודעה ל-chunks עם Header----------------------------
+    chunks = []  # רשימה ריקה לאחסון החתיכות
+    for i in range(0, len(message_for_the_server), max_msg_size):
+        chunk_content = message_for_the_server[i:i + max_msg_size]  # חותכים מקטע מהמחרוזת
+        header = f"{i // max_msg_size:04d}"  # יוצרים Header עם מספר סידורי בפורמט 4 ספרות
+        chunk_with_header = header.encode('utf-8') + chunk_content  # מחברים את ה-Header לתוכן
+        chunks.append(chunk_with_header)  # מוסיפים את החתיכה עם ה-Header לרשימה
+
     num_chunks = len(chunks)
     base = 0  # תחילת החלון
     next_seq_num = 0  # המספר הסידורי הבא לשליחה
     acks_received = set()  # רשימת ה-ACK שהתקבלו
 
+    # ---------------------שליחת החתיכות לשרת----------------------------
     while base < num_chunks:
         # שליחת הודעות במסגרת חלון ההזזה
         while next_seq_num < base + window_size and next_seq_num < num_chunks:
-            packet = f"{next_seq_num}:{chunks[next_seq_num].decode('utf-8')}"
-            client_socket.send(packet.encode('utf-8'))
-            print(f"Sent chunk {next_seq_num}: {chunks[next_seq_num].decode('utf-8')}")
+            client_socket.send(chunks[next_seq_num])  # שולחים את החתיכה (כבר כוללת Header)
+            print(f"Sent chunk {next_seq_num}: {chunks[next_seq_num][4:].decode('utf-8')}")
             next_seq_num += 1
 
-            
-    for i in range(0, len(message_for_the_server), max_msg_size):
-        chunk = message_for_the_server[i:i + max_msg_size]
-        seq_num = i // max_msg_size  # חישוב מספר סידורי
-        packet = f"{seq_num}:{chunk}"  # שילוב מספר סידורי ותוכן
+        ack_data = client_socket.recv(1024).decode('utf-8')  # קבלת הנתונים מהשרת
+        ack_messages = ack_data.strip().split("\n")  # פיצול ההודעות לפי קו מפריד '\n'
+        for ack_msg in ack_messages:  # עיבוד כל הודעת ACK בנפרד
+            if ack_msg.startswith("ACK:"):  # בדיקה אם ההודעה מתחילה ב-"ACK:"
+                try:
+                    ack_num = int(ack_msg[4:])  # שליפת המספר הסידורי מתוך ההודעה
+                    print(f"Received ACK for chunk {ack_num}")
+                    acks_received.add(ack_num)  # הוספת המספר הסידורי לרשימת ה-ACKs שהתקבלו
+                except ValueError:
+                    print(f"Invalid ACK message: {ack_msg}")  # טיפול במקרה שבו ההודעה לא תקינה
 
-        client_socket.send(packet.encode('utf-8'))  # שליחת המקטע
-        print(f"Sent chunk {seq_num}: {chunk.decode('utf-8').strip('b')}")
+        # דכון הבסיס (base) לחלון ההזזה
+        while base in acks_received:
+            base += 1
 
-        while True:
-            ack = client_socket.recv(1024).decode('utf-8').strip()
-            if ack == f"ACK:{seq_num}":
-                print(f"Received ACK for packet {seq_num}")
-                break  # יציאה מהלולאה אם התקבל ACK מתאים
 
     client_socket.close()
     print("the connected is closed")

@@ -61,7 +61,7 @@ def server():
         all_the_message = ""
         expected_seq = 0
         while True:
-            chunk = client_socket.recv(max_message_size + 10).decode('utf-8')  # מקבל מקטע
+            chunk = client_socket.recv(max_message_size + 4).decode('utf-8')  # מקבל מקטע
             if not chunk:
                 break
             # print(chunk.strip("'b"))
