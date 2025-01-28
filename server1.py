@@ -90,8 +90,11 @@ def process_chunks(client_socket, max_message_size):
             # Check for out-of-order chunks that can now be processed
             while expected_seq in received_chunks:
                 all_the_message += received_chunks.pop(expected_seq)
-                client_socket.send(f"ACK:{expected_seq:04d}\n".encode('utf-8'))
+                print(f"Processing out-of-order chunk {expected_seq}")
                 expected_seq += 1
+
+            if seq_num == expected_seq - 1:
+                client_socket.send(f"ACK:{expected_seq - 1:04d}\n".encode('utf-8'))
 
         elif seq_num > expected_seq:  # Out-of-order chunk
             print(f"Out-of-order chunk {seq_num}: storing for later")
