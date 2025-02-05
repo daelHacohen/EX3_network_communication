@@ -1,4 +1,6 @@
 import socket
+import time
+
 
 def server1():
     server_socket = initialize_server()
@@ -83,7 +85,7 @@ def process_chunks(client_socket, max_message_size):
 
         if seq_num == expected_seq:  # Sequence matches
             print(f"Received chunk {seq_num}: {data}")
-            client_socket.send(f"ACK:{seq_num:04d}\n".encode('utf-8'))  # Send ACK
+            #client_socket.send(f"ACK:{seq_num:04d}\n".encode('utf-8'))  # Send ACK
             all_the_message += data
             expected_seq += 1
 
@@ -93,13 +95,12 @@ def process_chunks(client_socket, max_message_size):
                 print(f"Processing out-of-order chunk {expected_seq}")
                 expected_seq += 1
 
-            if seq_num == expected_seq - 1:
-                client_socket.send(f"ACK:{expected_seq - 1:04d}\n".encode('utf-8'))
+            client_socket.send(f"ACK:{expected_seq - 1:04d}\n".encode('utf-8'))
 
         elif seq_num > expected_seq:  # Out-of-order chunk
             print(f"Out-of-order chunk {seq_num}: storing for later")
             received_chunks[seq_num] = data
-            client_socket.send(f"ACK:{seq_num:04d}\n".encode('utf-8'))
+            client_socket.send(f"ACK:{expected_seq-1:04d}\n".encode('utf-8'))
 
         else:  # Duplicate or late chunk
             print(f"Duplicate or late chunk {seq_num}, ignoring")

@@ -44,6 +44,7 @@ def client():
     next_seq_num = 0  # המספר הסידורי הבא לשליחה
     acks_received = set()  # רשימת ה-ACK שהתקבלו
     timer_start = None  # התחלת הטיימר
+    max_ack = -1
 
     # ---------------------שליחת החתיכות לשרת----------------------------
     while base < num_chunks:
@@ -54,16 +55,24 @@ def client():
                 timer_start = time.time()
             print(f"Sent chunk {next_seq_num}: {chunks[next_seq_num][4:].decode('utf-8')}")
             next_seq_num += 1
+
         try:
             client_socket.settimeout(timeout - (time.time() - timer_start))
             ack_data = client_socket.recv(1024).decode('utf-8')  # קבלת הנתונים מהשרת
             ack_messages = ack_data.strip().split("\n")  # פיצול ההודעות לפי קו מפריד '\n'
+
+
+
             for ack_msg in ack_messages:  # עיבוד כל הודעת ACK בנפרד
                 if ack_msg.startswith("ACK:"):  # בדיקה אם ההודעה מתחילה ב-"ACK:"
                     try:
                         ack_num = int(ack_msg[4:])  # שליפת המספר הסידורי מתוך ההודעה
                         print(f"Received ACK for chunk {ack_num}")
                         acks_received.add(ack_num)  # הוספת המספר הסידורי לרשימת ה-ACKs שהתקבלו
+
+                        if ack_num > max_ack:
+                            max_ack = ack_num
+
                     except ValueError:
                         print(f"Invalid ACK message: {ack_msg}")  # טיפול במקרה שבו ההודעה לא תקינה
 
@@ -71,7 +80,14 @@ def client():
             while base in acks_received:
                 base += 1
 
+
         except socket.timeout:
+
+            if max_ack >= base:
+                timer_start = time.time()  # לא נחשב timeout מחדש
+                base= max_ack+1
+                continue
+
             print("Timeout occurred. Resending unacknowledged chunks...")
             for i in range(base, next_seq_num):
                 if i not in acks_received:
