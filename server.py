@@ -1,8 +1,6 @@
 import socket
-import time
 
-
-def server1():
+def server():
     server_socket = initialize_server()
     max_message_size = get_max_message_size()
     window_size = get_window_size()
@@ -19,7 +17,7 @@ def server1():
 def initialize_server():
     """Initializes and starts the server."""
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('127.0.0.1', 12345))
+    server_socket.bind(('127.0.0.1', 8080))
     server_socket.listen()
     print("Server is listening...")
     return server_socket
@@ -85,7 +83,6 @@ def process_chunks(client_socket, max_message_size):
 
         if seq_num == expected_seq:  # Sequence matches
             print(f"Received chunk {seq_num}: {data}")
-            #client_socket.send(f"ACK:{seq_num:04d}\n".encode('utf-8'))  # Send ACK
             all_the_message += data
             expected_seq += 1
 
@@ -121,4 +118,4 @@ def get_value_from_file(file_name, variable_name):
     return None
 
 if __name__ == "__main__":
-   server1()
+   server()
