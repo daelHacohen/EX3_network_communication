@@ -91,9 +91,10 @@ def process_chunks(client_socket, max_message_size):
                 all_the_message += received_chunks.pop(expected_seq)
                 print(f"Processing out-of-order chunk {expected_seq}")
                 expected_seq += 1
-
+            #שולח hack על החבילה הכי גדולה
             client_socket.send(f"ACK:{expected_seq - 1:04d}\n".encode('utf-8'))
 
+        #אם התקבלה חבילה מחוץ לסדר
         elif seq_num > expected_seq:  # Out-of-order chunk
             print(f"Out-of-order chunk {seq_num}: storing for later")
             received_chunks[seq_num] = data
